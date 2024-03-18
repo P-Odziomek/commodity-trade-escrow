@@ -1,0 +1,19 @@
+{
+  "name": "commodity-trade-escrow",
+  "version": "1.0.0",
+  "description": "Test contract for buy/sell escrow agreements",
+  "scripts": {
+    "test": "npx hh test",
+    "build": "npx hh clean && npx hh compile",
+    "coverage": "npx hh coverage"
+  },
+  "author": "P.Odziomek",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.1"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2"
+  }
+}
