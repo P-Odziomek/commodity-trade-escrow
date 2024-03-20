@@ -440,6 +440,7 @@ describe("CommodityTradeEscrow", function () {
       const { cte, testToken, seller, buyer, arbitrator, anotherAccount } = await loadFixture(deployFixtureWithPaidAgreementInETH);
       await cte.connect(seller).sellerRefundBuyer(0);
 
+      const preWithdrawBalance = await ethers.provider.getBalance(buyer.address)
       const tx = cte.connect(buyer).buyerWithdrawFunds(0);
       await expect(tx).to.emit(cte, "FundsWithdrawn").withArgs(0, buyer.address);
       checkAgreementStatus(
@@ -455,7 +456,12 @@ describe("CommodityTradeEscrow", function () {
         SettlementStatus.BuyerRefundedBySeller,
         'Agreement in ETH'
       )
-      expect(await testToken.balanceOf(buyer.address)).to.equal(initialTokenMintFormatted);
+      const txReceipt = await ethers.provider.getTransactionReceipt((await tx).hash)
+      const gasCost = txReceipt?.gasPrice * txReceipt?.gasUsed;
+      const postWithdrawBalance = await ethers.provider.getBalance(buyer.address)
+      expect(postWithdrawBalance).to.equal((preWithdrawBalance + BigInt(examplePriceFormatted) - gasCost).toString())
+     console.log(await ethers.provider.getBalance(buyer.address))
+      
     });
 
     it("Only the buyer may withdraw funds when refunded. Withdraw in Tokens.", async function () {
