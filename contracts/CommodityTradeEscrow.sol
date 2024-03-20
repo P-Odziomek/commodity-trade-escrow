@@ -19,8 +19,8 @@ contract CommodityTradeEscrow is ReentrancyGuard {
      * @notice Struct used for holding agreements' data in storage.
      */
     struct Agreement {
-        address seller; // address of the seller, by default the account that creates agreement
-        address buyer; // address of the buyer
+        address payable seller; // address of the seller, by default the account that creates agreement
+        address payable buyer; // address of the buyer
         address arbitrator; // in case of disputes, the account that decides of settlement
         uint256 price; // commodity price
         bool paid; // if the commodity price has been paid
@@ -150,8 +150,8 @@ contract CommodityTradeEscrow is ReentrancyGuard {
         require(price != 0, "price not set");
 
         Agreement memory agreement;
-        agreement.seller = seller;
-        agreement.buyer = buyer;
+        agreement.seller = payable(seller);
+        agreement.buyer = payable(buyer);
         agreement.arbitrator = arbitrator;
         agreement.price = price;
         agreement.paid = false;
@@ -213,7 +213,8 @@ contract CommodityTradeEscrow is ReentrancyGuard {
 
         agreement.withdrawn = true;
         if (agreement.token == address(0)) {
-            payable(agreement.seller).transfer(agreement.price);
+            (bool success, ) = agreement.seller.call{value: agreement.price}("");
+            require(success, "eth transfer failed");
         } else {
             IERC20(agreement.token).safeTransfer(
                 agreement.seller,
@@ -304,7 +305,8 @@ contract CommodityTradeEscrow is ReentrancyGuard {
 
         agreement.withdrawn = true;
         if (agreement.token == address(0)) {
-            payable(agreement.buyer).transfer(agreement.price);
+            (bool success, ) = agreement.buyer.call{value: agreement.price}("");
+            require(success, "eth transfer failed");
         } else {
             IERC20(agreement.token).safeTransfer(
                 agreement.buyer,
