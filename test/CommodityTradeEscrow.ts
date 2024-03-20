@@ -377,7 +377,8 @@ describe("CommodityTradeEscrow", function () {
     it("Only the seller may withdraw funds when fully settled. Agreement in ETH.", async function () {
       const { cte, testToken, seller, buyer, arbitrator, anotherAccount } = await loadFixture(deployFixtureWithPaidAgreementInETH);
       await cte.connect(buyer).confirmCommodityReceival(0);
-      
+
+      const preWithdrawBalance = await ethers.provider.getBalance(seller.address)
       const tx = await cte.connect(seller).sellerWithdrawFunds(0);
       await expect(tx).to.emit(cte, "FundsWithdrawn").withArgs(0, seller.address);
       checkAgreementStatus(
@@ -393,12 +394,15 @@ describe("CommodityTradeEscrow", function () {
         SettlementStatus.CommodityReceivedByBuyer,
         'Agreement in ETH'
       )
+      const txReceipt = await ethers.provider.getTransactionReceipt((await tx).hash)
+      const gasCost = txReceipt?.gasPrice * txReceipt?.gasUsed;
+      const postWithdrawBalance = await ethers.provider.getBalance(seller.address)
+      expect(postWithdrawBalance).to.equal((preWithdrawBalance + BigInt(examplePriceFormatted) - gasCost).toString())
     });
 
     it("Only the seller may withdraw funds when fully settled. Agreement in Tokens.", async function () {
       const { cte, testToken, seller, buyer, arbitrator, anotherAccount } = await loadFixture(deployFixtureWithPaidAgreementInTokens);
       await cte.connect(buyer).confirmCommodityReceival(0);
-      
       const tx = await cte.connect(seller).sellerWithdrawFunds(0);
       await expect(tx).to.emit(cte, "FundsWithdrawn").withArgs(0, seller.address);
       checkAgreementStatus(
@@ -460,8 +464,6 @@ describe("CommodityTradeEscrow", function () {
       const gasCost = txReceipt?.gasPrice * txReceipt?.gasUsed;
       const postWithdrawBalance = await ethers.provider.getBalance(buyer.address)
       expect(postWithdrawBalance).to.equal((preWithdrawBalance + BigInt(examplePriceFormatted) - gasCost).toString())
-     console.log(await ethers.provider.getBalance(buyer.address))
-      
     });
 
     it("Only the buyer may withdraw funds when refunded. Withdraw in Tokens.", async function () {
